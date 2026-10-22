@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Training Admin</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --surface-2: #f0f2f5;
+      --text: #1b1f24;
+      --muted: #5f6b76;
+      --border: #dde2e7;
+      --accent: #1a7f5a;
+      --accent-hover: #156b4b;
+      --accent-text: #ffffff;
+      --accent-soft: #e3f3ec;
+      --danger: #b42318;
+      --danger-soft: #fdecea;
+      --warn-soft: #fff4e0;
+      --warn-text: #8a5300;
+      --focus: #2b7de9;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #111316;
+        --surface: #1a1d21;
+        --surface-2: #22262b;
+        --text: #e8ebee;
+        --muted: #9aa4ae;
+        --border: #2f343a;
+        --accent: #3fb984;
+        --accent-hover: #52c893;
+        --accent-text: #0c1a13;
+        --accent-soft: #173327;
+        --danger: #f2877c;
+        --danger-soft: #3a1d1a;
+        --warn-soft: #3a2c12;
+        --warn-text: #f3c26b;
+        --focus: #6aa8ff;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); }
+    button, input, select { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .bar {
+      max-width: 1100px; margin: 0 auto; padding: 0 16px;
+      display: flex; align-items: center; gap: 16px; min-height: 56px; flex-wrap: wrap;
+    }
+    .brand { font-weight: 700; white-space: nowrap; }
+    nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; }
+    nav a {
+      text-decoration: none; color: var(--muted); padding: 8px 12px; border-radius: 8px;
+      white-space: nowrap; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;
+    }
+    nav a:hover { background: var(--surface-2); color: var(--text); }
+    nav a.active { background: var(--accent-soft); color: var(--accent); }
+    .badge {
+      background: var(--accent); color: var(--accent-text); border-radius: 999px;
+      font-size: 12px; padding: 0 7px; line-height: 18px; font-weight: 600;
+    }
+    .user { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 24px; margin: 0; line-height: 1.25; }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    h3 { font-size: 16px; margin: 0; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+
+    .page-head {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+      flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .page-head p { margin: 4px 0 0; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Buttons */
+    .btn {
+      border: 1px solid var(--border); background: var(--surface); padding: 8px 14px;
+      border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text);
+    }
+    .btn:hover { background: var(--surface-2); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .btn.primary:hover { background: var(--accent-hover); }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-soft); }
+    .btn.small { padding: 4px 10px; font-size: 13px; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .icon-btn {
+      border: none; background: none; cursor: pointer; color: var(--muted);
+      padding: 6px; border-radius: 6px; line-height: 0;
+    }
+    .icon-btn:hover { background: var(--danger-soft); color: var(--danger); }
+
+    /* Cards and panels */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; box-shadow: var(--shadow);
+    }
+    .stack { display: grid; gap: 16px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    .notice { padding: 12px 14px; border-radius: 10px; background: var(--surface-2); }
+    .notice.warn { background: var(--warn-soft); color: var(--warn-text); }
+    .notice.error { background: var(--danger-soft); color: var(--danger); }
+    .notice.ok { background: var(--accent-soft); color: var(--accent); }
+    .notice ul { margin: 6px 0 0; padding-left: 20px; }
+    .empty { text-align: center; padding: 48px 16px; }
+    .empty p { margin: 8px 0 16px; }
+
+    .chip {
+      display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+      background: var(--surface-2); color: var(--muted);
+    }
+    .chip.sent { background: var(--accent-soft); color: var(--accent); }
+    .chip.pending { background: var(--warn-soft); color: var(--warn-text); }
+
+    /* Session cards */
+    .session .meta { margin: 2px 0 10px; color: var(--muted); }
+    .session .head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .count { font-weight: 600; white-space: nowrap; }
+    .names { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+    .names li {
+      display: flex; justify-content: space-between; gap: 8px; padding: 7px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .names li:last-child { border-bottom: none; }
+    .tick { color: var(--accent); font-size: 13px; white-space: nowrap; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    tbody tr.link { cursor: pointer; }
+    tbody tr.link:hover { background: var(--surface-2); }
+    tr.inactive td { color: var(--muted); }
+
+    /* Forms */
+    input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="search"] {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); min-width: 0;
+    }
+    input:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 25%, transparent); }
+    .editor td { padding: 6px 4px; }
+    .editor input[type="date"] { min-width: 140px; }
+    .editor input[type="time"] { min-width: 100px; }
+    .editor .title-col { min-width: 220px; }
+    .row-status { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .row-status.err { color: var(--danger); }
+    .form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .form-row input { flex: 1 1 180px; }
+    label.toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+
+    /* Upload */
+    .drop {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 32px 16px; text-align: center;
+      background: var(--surface); cursor: pointer;
+    }
+    .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+    .drop strong { display: block; font-size: 16px; margin-bottom: 4px; }
+
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); padding: 24px 0; }
+
+    /* Login */
+    .login { max-width: 400px; margin: 10vh auto 0; }
+    .login h1 { margin-bottom: 6px; }
+    .login form { display: grid; gap: 10px; margin-top: 16px; }
+
+    /* Toasts */
+    #toasts { position: fixed; bottom: 16px; left: 16px; right: 16px; display: grid; gap: 8px; justify-items: center; z-index: 50; pointer-events: none; }
+    .toast {
+      background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+      max-width: 520px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); pointer-events: auto;
+    }
+    .toast.error { background: var(--danger); color: #fff; }
+
+    #print-area { display: none; }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 20px; }
+      .bar { padding: 8px 16px; }
+      nav { order: 3; flex-basis: 100%; }
+      .user .email { display: none; }
+    }
+
+    @media print {
+      body { background: #fff; color: #000; }
+      header, main, #toasts { display: none !important; }
+      #print-area { display: block; }
+      .print-page { page-break-after: always; padding: 8px; }
+      .print-page:last-child { page-break-after: auto; }
+      .print-page h2 { font-size: 20px; margin: 0 0 4px; }
+      .print-page p { margin: 0 0 16px; }
+      .print-page table { width: 100%; border-collapse: collapse; }
+      .print-page th, .print-page td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 13px; }
+      .print-page td.sign { width: 40%; }
+      .print-page tr { height: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="header" hidden>
+    <div class="bar">
+      <div class="brand">Training Admin</div>
+      <nav id="nav">
+        <a href="#week" data-route="week">This week</a>
+        <a href="#schedules" data-route="schedules">Schedules <span class="badge" id="badge-schedules" hidden></span></a>
+        <a href="#staff" data-route="staff">Staff <span class="badge" id="badge-staff" hidden></span></a>
+        <a href="#history" data-route="history">History</a>
+      </nav>
+      <div class="user"><span class="email" id="user-email"></span><button class="btn small" id="sign-out">Sign out</button></div>
+    </div>
+  </header>
+
+  <main id="app"><div class="loading"><span class="spinner"></span> Loading…</div></main>
+  <div id="toasts" aria-live="polite"></div>
+  <div id="print-area"></div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm";
+
+    const SUPABASE_URL = "https://qrouoqzrbjwhmejoxcaw.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GKlk_fVAJ6peRtdRcKIfUA_FtjSDJQw";
+    const API_URL = `${SUPABASE_URL}/functions/v1/admin`;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      // Implicit flow lets the emailed link work on a different device from where it was requested.
+      auth: { flowType: "implicit", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+
+    const app = document.getElementById("app");
+    const state = { dashboard: null, uploadWarnings: {} };
+
+    // ---- Utilities ---------------------------------------------------------
+
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const day = (d) => { const x = new Date(`${d}T00:00:00Z`); return `${DAYS[x.getUTCDay()]} ${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]}`; };
+    const shortDate = (d) => { if (!d) return "—"; const x = new Date(`${d}T00:00:00Z`); return `${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]} ${x.getUTCFullYear()}`; };
+    const hhmm = (t) => (t ? t.slice(0, 5) : "");
+    const timeRange = (t) => (t.training_time ? (t.end_time ? `${hhmm(t.training_time)}–${hhmm(t.end_time)}` : hhmm(t.training_time)) : "Time TBC");
+    const describe = (t) => [day(t.training_date), timeRange(t), t.location].filter(Boolean).join(" · ");
+    const when = (iso) => (iso ? new Date(iso).toLocaleString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+    const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
+
+    function toast(message, kind = "") {
+      const el = document.createElement("div");
+      el.className = `toast ${kind}`;
+      el.textContent = message;
+      document.getElementById("toasts").append(el);
+      setTimeout(() => el.remove(), kind === "error" ? 7000 : 4000);
+    }
+
+    function loading(text = "Loading…") {
+      app.innerHTML = `<div class="loading"><span class="spinner"></span> ${esc(text)}</div>`;
+    }
+
+    function download(filename, text, type = "text/csv") {
+      const blob = new Blob([text], { type: `${type};charset=utf-8` });
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: filename });
+      document.body.append(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
+    const csvCell = (v) => { const s = String(v ?? ""); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+
+    async function api(action, params = {}) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { renderLogin(); throw new Error("Please sign in again."); }
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...params }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        await supabase.auth.signOut();
+        renderLogin(body.error);
+        throw new Error(body.error || "Please sign in again.");
+      }
+      if (!res.ok) throw new Error(body.error || `Request failed (${res.status}).`);
+      return body;
+    }
+
+    // ---- Login -------------------------------------------------------------
+
+    function renderLogin(message) {
+      document.getElementById("header").hidden = true;
+      app.innerHTML = `
+        <div class="login card">
+          <h1>Training Admin</h1>
+          <p class="muted">Enter your email and we'll send you a link to sign in. No password needed.</p>
+          ${message ? `<div class="notice error">${esc(message)}</div>` : ""}
+          <form id="login-form">
+            <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email">
+            <button class="btn primary" type="submit">Email me a sign-in link</button>
+          </form>
+          <div id="login-result"></div>
+        </div>`;
+      document.getElementById("login-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("login-email").value.trim();
+        const button = e.submitter;
+        button.disabled = true;
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname },
+        });
+        button.disabled = false;
+        document.getElementById("login-result").innerHTML = error
+          ? `<div class="notice error" style="margin-top:10px">${esc(/signup|not allowed|not found/i.test(error.message) ? "That email can't sign in to this dashboard." : error.message)}</div>`
+          : `<div class="notice ok" style="margin-top:10px">Check your inbox for the sign-in link. You can open it on this device or any other. It may take a minute, so check your spam folder too.</div>`;
+      });
+    }
+
+    // ---- Shell and routing --------------------------------------------------
+
+    async function refreshDashboard() {
+      state.dashboard = await api("dashboard");
+      const pending = state.dashboard.schedules.filter((s) => s.status === "pending_approval").length;
+      const b1 = document.getElementById("badge-schedules");
+      b1.hidden = pending === 0; b1.textContent = pending;
+      const b2 = document.getElementById("badge-staff");
+      b2.hidden = state.dashboard.pendingRequests === 0; b2.textContent = state.dashboard.pendingRequests;
+      return state.dashboard;
+    }
+
+    async function route() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return renderLogin();
+      document.getElementById("header").hidden = false;
+      document.getElementById("user-email").textContent = session.user.email;
+
+      const [name, id] = location.hash.replace(/^#/, "").split("/");
+      const page = name || "week";
+      document.querySelectorAll("#nav a").forEach((a) => {
+        a.classList.toggle("active", a.dataset.route === page || (page === "schedule" && a.dataset.route === "history"));
+      });
+
+      loading();
+      try {
+        await refreshDashboard();
+        if (page === "week") await renderWeek();
+        else if (page === "schedules") renderSchedules();
+        else if (page === "schedule") await renderSchedule(id);
+        else if (page === "staff") await renderStaff();
+        else if (page === "history") renderHistory();
+        else location.hash = "#week";
+      } catch (err) {
+        app.innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+      }
+    }
+
+    // ---- This week -----------------------------------------------------------
+
+    async function renderWeek() {
+      const id = state.dashboard.currentScheduleId;
+      if (!id) {
+        const pending = state.dashboard.schedules.find((s) => s.status === "pending_approval");
+        app.innerHTML = `
+          <div class="card empty">
+            <h2>No schedule has been sent yet</h2>
+            <p class="muted">${pending ? "A schedule is waiting for your check before it goes to staff." : "Upload this week's training schedule PDF to get started."}</p>
+            <a class="btn primary" href="${pending ? `#schedule/${pending.id}` : "#schedules"}">${pending ? "Review schedule" : "Upload a schedule"}</a>
+          </div>`;
+        return;
+      }
+      await renderSchedule(id, "This week");
+    }
+
+    // ---- Schedule detail: editor (pending) or attendance (sent) -------------
+
+    async function renderSchedule(id, heading) {
+      const data = await api("schedule", { id });
+      if (data.schedule.status === "pending_approval") return renderEditor(data);
+      renderAttendance(data, heading);
+    }
+
+    function renderAttendance({ schedule, trainings }, heading) {
+      const bookings = trainings.reduce((n, t) => n + t.bookings.length, 0);
+      app.innerHTML = `
+        <div class="page-head">
+          <div>
+            <h1>${esc(heading ? `${heading}: week of ${shortDate(schedule.week_start)}` : `Week of ${shortDate(schedule.week_start)}`)}</h1>
+            <p class="muted">${plural(trainings.length, "session")} · ${plural(bookings, "booking")} · <span class="chip sent">Sent to staff</span></p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="print">Print sign-in sheets</button>
+            <button class="btn" id="csv">Download attendance (CSV)</button>
+          </div>
+        </div>
+        <div class="grid" id="sessions">
+          ${trainings.map((t) => sessionCard(t)).join("")}
+        </div>`;
+
+      document.getElementById("csv").onclick = () => {
+        const rows = [["Session", "Date", "Time", "Venue", "Name", "Phone", "Booked", "Reminder sent"]];
+        for (const t of trainings) {
+          if (t.bookings.length === 0) rows.push([t.title, t.training_date, timeRange(t), t.location ?? "", "", "", "", ""]);
+          for (const b of t.bookings) {
+            rows.push([t.title, t.training_date, timeRange(t), t.location ?? "", b.name, b.phone, when(b.opted_in_at), b.reminded_at ? "yes" : "no"]);
+          }
+        }
+        download(`attendance-week-of-${schedule.week_start}.csv`, "﻿" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n"));
+      };
+      document.getElementById("print").onclick = () => printSheets(trainings);
+
+      document.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.onclick = () => editSentSession(trainings.find((t) => t.id === btn.dataset.edit), btn.closest(".session"));
+      });
+    }
+
+    function sessionCard(t) {
+      return `
+        <div class="card session">
+          <div class="head">
+            <h3>${esc(t.title)}</h3>
+            <span class="count">${t.bookings.length} booked</span>
+          </div>
+          <p class="meta">${esc(describe(t))}</p>
+          ${t.bookings.length
+            ? `<ul class="names">${t.bookings.map((b) => `
+                <li><span>${esc(b.name)}</span>${b.reminded_at ? `<span class="tick" title="Reminder sent ${esc(when(b.reminded_at))}">✓ reminded</span>` : ""}</li>`).join("")}</ul>`
+            : `<p class="muted small" style="margin:0">No bookings yet.</p>`}
+          <div style="margin-top:12px"><button class="btn small" data-edit="${t.id}">Edit details</button></div>
+        </div>`;
+    }
+
+    function editSentSession(t, card) {
+      card.innerHTML = `
+        <div class="stack" style="gap:8px">
+          <input type="text" name="title" value="${esc(t.title)}" aria-label="Title">
+          <div class="form-row">
+            <input type="date" name="date" value="${esc(t.training_date)}" aria-label="Date">
+            <input type="time" name="start" value="${esc(hhmm(t.training_time))}" aria-label="Start time">
+            <input type="time" name="end" value="${esc(hhmm(t.end_time))}" aria-label="End time">
+          </div>
+          <input type="text" name="location" value="${esc(t.location ?? "")}" placeholder="Venue" aria-label="Venue">
+          ${t.bookings.length ? `<div class="notice warn small">${plural(t.bookings.length, "person has", "people have")} booked this. Their WhatsApp reminder and calendar link will show the new details, but anyone who already saved it in their calendar won't see the change. Let them know.</div>` : ""}
+          <div class="actions"><button class="btn primary small" data-save>Save</button><button class="btn small" data-cancel>Cancel</button></div>
+        </div>`;
+      card.querySelector("[data-cancel]").onclick = () => route();
+      card.querySelector("[data-save]").onclick = async (e) => {
+        e.target.disabled = true;
+        const v = (n) => card.querySelector(`[name="${n}"]`).value;
+        try {
+          await api("save_training", { id: t.id, title: v("title"), date: v("date"), start: v("start"), end: v("end"), location: v("location") });
+          toast("Session updated.");
+          route();
+        } catch (err) {
+          toast(err.message, "error");
+          e.target.disabled = false;
+        }
+      };
+    }
+
+    function printSheets(trainings) {
+      document.getElementById("print-area").innerHTML = trainings.map((t) => `
+        <div class="print-page">
+          <h2>${esc(t.title)}</h2>
+          <p>${esc(describe(t))} · ${plural(t.bookings.length, "booking")}</p>
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Signature</th></tr></thead>
+            <tbody>
+              ${t.bookings.map((b) => `<tr><td>${esc(b.name)}</td><td>${esc(b.phone)}</td><td class="sign"></td></tr>`).join("")}
+              ${Array.from({ length: Math.max(3, 10 - t.bookings.length) }, () => `<tr><td></td><td></td><td class="sign"></td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`).join("");
+      window.print();
+    }
+
+    function renderEditor({ schedule, trainings }) {
+      const staffCount = state.dashboard.activeStaff;
+      const warnings = state.uploadWarnings[schedule.id] ?? [];
+      app.innerHTML = `
+        <div class="page-head">
+          <div>
+            <h1>Check the schedule: week of ${esc(shortDate(schedule.week_start))}</h1>
+            <p class="muted"><span class="chip pending">Waiting for approval</span> Nothing has gone to staff yet. Fix anything Claude read wrongly, then send.</p>
+          </div>
+          <div class="actions">
+            <button class="btn danger" id="discard">Discard</button>
+            <button class="btn primary" id="send">Send to ${plural(staffCount, "staff member")}</button>
+          </div>
+        </div>
+        ${warnings.length ? `<div class="notice warn" style="margin-bottom:16px"><strong>Check these:</strong><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
+        <div class="card">
+          <div class="table-wrap">
+            <table class="editor">
+              <thead><tr><th class="title-col">Session</th><th>Date</th><th>Start</th><th>End</th><th>Venue</th><th></th><th></th></tr></thead>
+              <tbody id="rows">${trainings.map(editorRow).join("")}</tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px"><button class="btn" id="add-row">+ Add a session</button></div>
+          <p class="muted small" style="margin:12px 0 0">Changes save automatically when you leave a field.</p>
+        </div>`;
+
+      const rows = document.getElementById("rows");
+      rows.querySelectorAll("tr").forEach(wireEditorRow);
+      document.getElementById("add-row").onclick = () => {
+        rows.insertAdjacentHTML("beforeend", editorRow({ id: "", title: "", training_date: schedule.week_start ?? "", training_time: "", end_time: "", location: "" }));
+        const tr = rows.lastElementChild;
+        wireEditorRow(tr);
+        tr.querySelector('[name="title"]').focus();
+      };
+
+      document.getElementById("send").onclick = async (e) => {
+        if (document.querySelector(".row-status.err")) return toast("Fix the highlighted sessions first.", "error");
+        if (!confirm(`Send this week's trainings to ${plural(staffCount, "staff member")} on WhatsApp?`)) return;
+        e.target.disabled = true;
+        e.target.innerHTML = `<span class="spinner"></span> Sending…`;
+        try {
+          const r = await api("send_schedule", { id: schedule.id });
+          toast(r.failed.length ? `Sent to ${r.total - r.failed.length} of ${r.total}. Couldn't reach: ${r.failed.join(", ")}` : `Sent to ${plural(r.total, "staff member")}.`, r.failed.length ? "error" : "");
+          location.hash = "#week";
+        } catch (err) {
+          toast(err.message, "error");
+          route();
+        }
+      };
+      document.getElementById("discard").onclick = async () => {
+        if (!confirm("Discard this schedule? Nothing has been sent, so staff won't notice.")) return;
+        try {
+          await api("discard_schedule", { id: schedule.id });
+          toast("Schedule discarded.");
+          location.hash = "#schedules";
+        } catch (err) {
+          toast(err.message, "error");
+        }
+      };
+
+      function wireEditorRow(tr) {
+        const status = tr.querySelector(".row-status");
+        // Saves run one after another, so a new row is created once and then updated.
+        let queue = Promise.resolve();
+        tr.querySelectorAll("input").forEach((input) => input.addEventListener("change", () => { queue = queue.then(save); }));
+        tr.querySelector("[data-delete]").onclick = async () => {
+          if (!tr.dataset.id) return tr.remove();
+          if (!confirm("Remove this session from the schedule?")) return;
+          try {
+            await api("delete_training", { id: tr.dataset.id });
+            tr.remove();
+            toast("Session removed.");
+          } catch (err) {
+            toast(err.message, "error");
+          }
+        };
+        async function save() {
+          const v = (n) => tr.querySelector(`[name="${n}"]`).value;
+          if (!v("title").trim() || !v("date")) {
+            status.textContent = "Needs a title and date";
+            status.className = "row-status err";
+            return;
+          }
+          status.textContent = "Saving…";
+          status.className = "row-status";
+          try {
+            const { training } = await api("save_training", {
+              id: tr.dataset.id || undefined, source_file_id: schedule.id,
+              title: v("title"), date: v("date"), start: v("start"), end: v("end"), location: v("location"),
+            });
+            tr.dataset.id = training.id;
+            status.textContent = "Saved";
+          } catch (err) {
+            status.textContent = err.message;
+            status.className = "row-status err";
+          }
+        }
+      }
+    }
+
+    function editorRow(t) {
+      return `
+        <tr data-id="${esc(t.id)}">
+          <td class="title-col"><input type="text" name="title" value="${esc(t.title)}" aria-label="Session title"></td>
+          <td><input type="date" name="date" value="${esc(t.training_date)}" aria-label="Date"></td>
+          <td><input type="time" name="start" value="${esc(hhmm(t.training_time))}" aria-label="Start time"></td>
+          <td><input type="time" name="end" value="${esc(hhmm(t.end_time))}" aria-label="End time"></td>
+          <td><input type="text" name="location" value="${esc(t.location ?? "")}" aria-label="Venue"></td>
+          <td><span class="row-status"></span></td>
+          <td><button class="icon-btn" data-delete title="Remove session" aria-label="Remove session">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          </button></td>
+        </tr>`;
+    }
+
+    // ---- Schedules (upload + waiting) ----------------------------------------
+
+    function renderSchedules() {
+      const pending = state.dashboard.schedules.filter((s) => s.status === "pending_approval");
+      const recent = state.dashboard.schedules.filter((s) => s.status === "sent").slice(0, 5);
+      app.innerHTML = `
+        <div class="page-head"><div><h1>Schedules</h1><p class="muted">Upload the weekly PDF. You'll check what Claude read before anything goes to staff.</p></div></div>
+        <div class="stack">
+          <label class="drop" id="drop">
+            <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+            <strong>Drop the schedule PDF here</strong>
+            <span class="muted">or click to choose a file</span>
+          </label>
+          <div id="upload-status"></div>
+          ${pending.length ? `
+            <div class="card">
+              <h2>Waiting for your approval</h2>
+              ${scheduleTable(pending)}
+            </div>` : ""}
+          ${recent.length ? `
+            <div class="card">
+              <h2>Recently sent</h2>
+              ${scheduleTable(recent)}
+              <p style="margin:12px 0 0"><a href="#history">See all past weeks</a></p>
+            </div>` : ""}
+        </div>`;
+      wireScheduleTables();
+
+      const drop = document.getElementById("drop");
+      const file = document.getElementById("file");
+      file.onchange = () => file.files[0] && upload(file.files[0]);
+      drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+      drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+      drop.addEventListener("drop", (e) => {
+        e.preventDefault();
+        drop.classList.remove("over");
+        const f = e.dataTransfer.files[0];
+        if (f) upload(f);
+      });
+    }
+
+    async function upload(file) {
+      const status = document.getElementById("upload-status");
+      if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+        status.innerHTML = `<div class="notice error">Please choose a PDF file.</div>`;
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        status.innerHTML = `<div class="notice error">That PDF is larger than 15 MB.</div>`;
+        return;
+      }
+      document.getElementById("drop").hidden = true;
+      status.innerHTML = `<div class="loading"><span class="spinner"></span> Reading "${esc(file.name)}". This takes about a minute…</div>`;
+      try {
+        const data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(",")[1]);
+          reader.onerror = () => reject(new Error("Couldn't read the file."));
+          reader.readAsDataURL(file);
+        });
+        const result = await api("upload_pdf", { filename: file.name, data });
+        state.uploadWarnings[result.id] = result.warnings;
+        location.hash = `#schedule/${result.id}`;
+      } catch (err) {
+        document.getElementById("drop").hidden = false;
+        status.innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+      }
+    }
+
+    function scheduleTable(list) {
+      return `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Week of</th><th>Status</th><th>Sessions</th><th>Bookings</th><th>Uploaded</th></tr></thead>
+          <tbody>${list.map((s) => `
+            <tr class="link" data-id="${s.id}" tabindex="0">
+              <td><strong>${esc(shortDate(s.week_start))}</strong></td>
+              <td><span class="chip ${s.status === "sent" ? "sent" : "pending"}">${s.status === "sent" ? "Sent" : "Waiting"}</span></td>
+              <td>${s.sessions}</td>
+              <td>${s.bookings}</td>
+              <td class="muted">${esc(when(s.processed_at))}</td>
+            </tr>`).join("")}</tbody>
+        </table></div>`;
+    }
+
+    function wireScheduleTables() {
+      document.querySelectorAll("tr.link[data-id]").forEach((tr) => {
+        const go = () => (location.hash = `#schedule/${tr.dataset.id}`);
+        tr.onclick = go;
+        tr.onkeydown = (e) => e.key === "Enter" && go();
+      });
+    }
+
+    // ---- History ---------------------------------------------------------------
+
+    function renderHistory() {
+      const all = state.dashboard.schedules;
+      app.innerHTML = `
+        <div class="page-head"><div><h1>History</h1><p class="muted">Every schedule, newest first. Open one to see who booked and print sign-in sheets.</p></div></div>
+        ${all.length ? `<div class="card">${scheduleTable(all)}</div>` : `<div class="card empty"><h2>Nothing here yet</h2><p class="muted">Schedules appear here once you upload them.</p><a class="btn primary" href="#schedules">Upload a schedule</a></div>`}`;
+      wireScheduleTables();
+    }
+
+    // ---- Staff -------------------------------------------------------------------
+
+    async function renderStaff() {
+      const { staff, requests } = await api("staff");
+      const pending = requests.filter((r) => r.status === "pending");
+      const active = staff.filter((s) => s.active).length;
+      app.innerHTML = `
+        <div class="page-head">
+          <div><h1>Staff</h1><p class="muted">${active} active · ${plural(staff.length, "person", "people")} in total. Only people who agreed to get WhatsApp messages should be listed.</p></div>
+          <div class="actions">
+            <label class="btn">Import CSV<input type="file" id="import" accept=".csv,text/csv" hidden></label>
+            <button class="btn" id="export">Export CSV</button>
+          </div>
+        </div>
+        <div class="stack">
+          <div id="import-result"></div>
+          ${pending.length ? `
+            <div class="card">
+              <h2>Join requests</h2>
+              <div class="table-wrap"><table>
+                <tbody>${pending.map((r) => `
+                  <tr>
+                    <td><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.phone)}</div></td>
+                    <td class="muted small">Asked ${esc(when(r.requested_at))}</td>
+                    <td style="text-align:right"><div class="actions" style="justify-content:flex-end">
+                      <button class="btn small" data-decline="${r.wa_id}">Decline</button>
+                      <button class="btn primary small" data-approve="${r.wa_id}">Approve</button>
+                    </div></td>
+                  </tr>`).join("")}</tbody>
+              </table></div>
+            </div>` : ""}
+          <div class="card">
+            <h2>Add a person</h2>
+            <form class="form-row" id="add-form">
+              <input type="text" name="name" placeholder="Name" required aria-label="Name">
+              <input type="tel" name="phone" placeholder="Phone, e.g. 082 123 4567" required aria-label="Phone">
+              <button class="btn primary" type="submit">Add</button>
+            </form>
+          </div>
+          <div class="card">
+            <div class="form-row" style="margin-bottom:8px"><input type="search" id="search" placeholder="Search by name or number" aria-label="Search staff"></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Active</th><th>Added</th><th>Last message</th><th></th></tr></thead>
+              <tbody id="staff-rows">${staff.map(staffRow).join("") || `<tr><td colspan="6" class="muted">No staff yet.</td></tr>`}</tbody>
+            </table></div>
+          </div>
+        </div>`;
+
+      document.querySelectorAll("[data-approve]").forEach((b) => b.onclick = () => decide("approve_request", b.dataset.approve, "approved"));
+      document.querySelectorAll("[data-decline]").forEach((b) => b.onclick = () => decide("decline_request", b.dataset.decline, "declined"));
+      async function decide(action, wa_id, word) {
+        try {
+          const r = await api(action, { wa_id });
+          toast(`${r.name} ${word}.`);
+          route();
+        } catch (err) { toast(err.message, "error"); }
+      }
+
+      document.getElementById("add-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        try {
+          await api("save_staff", { name: f.get("name"), phone: f.get("phone"), active: true });
+          toast(`${f.get("name")} added.`);
+          route();
+        } catch (err) { toast(err.message, "error"); }
+      };
+
+      document.getElementById("search").oninput = (e) => {
+        const q = e.target.value.toLowerCase().replace(/\s/g, "");
+        document.querySelectorAll("#staff-rows tr[data-wa]").forEach((tr) => {
+          tr.hidden = q && !tr.dataset.search.includes(q);
+        });
+      };
+
+      document.querySelectorAll("#staff-rows input[data-active]").forEach((box) => {
+        box.onchange = async () => {
+          const tr = box.closest("tr");
+          try {
+            await api("save_staff", { wa_id: tr.dataset.wa, name: tr.dataset.name, active: box.checked });
+            tr.classList.toggle("inactive", !box.checked);
+            toast(`${tr.dataset.name} is now ${box.checked ? "active" : "inactive"}.`);
+          } catch (err) {
+            box.checked = !box.checked;
+            toast(err.message, "error");
+          }
+        };
+      });
+      document.querySelectorAll("#staff-rows [data-rename]").forEach((btn) => {
+        btn.onclick = async () => {
+          const tr = btn.closest("tr");
+          const name = prompt("Name", tr.dataset.name);
+          if (!name || name.trim() === tr.dataset.name) return;
+          try {
+            await api("save_staff", { wa_id: tr.dataset.wa, name, active: tr.querySelector("[data-active]").checked });
+            toast("Name updated.");
+            route();
+          } catch (err) { toast(err.message, "error"); }
+        };
+      });
+
+      document.getElementById("export").onclick = async () => {
+        try {
+          const { csv } = await api("export_staff");
+          download("staff.csv", csv);
+        } catch (err) { toast(err.message, "error"); }
+      };
+      document.getElementById("import").onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const result = document.getElementById("import-result");
+        result.innerHTML = `<div class="loading"><span class="spinner"></span> Importing…</div>`;
+        try {
+          const text = await readCsv(file);
+          const { summary: s, problems } = await api("import_staff", { csv: text });
+          await renderStaff();
+          document.getElementById("import-result").innerHTML = `
+            <div class="notice ${problems.length ? "warn" : "ok"}">
+              <strong>Staff list updated:</strong> ${s.added} added, ${s.updated} changed, ${s.deactivated} set to inactive. ${s.activeTotal} active in total.
+              ${problems.length ? `<ul>${problems.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+            </div>`;
+        } catch (err) {
+          result.innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        }
+      };
+    }
+
+    function staffRow(s) {
+      return `
+        <tr data-wa="${s.wa_id}" data-name="${esc(s.name)}" data-search="${esc((s.name + s.wa_id + s.phone).toLowerCase().replace(/\s/g, ""))}" class="${s.active ? "" : "inactive"}">
+          <td><strong>${esc(s.name)}</strong></td>
+          <td class="muted">${esc(s.phone)}</td>
+          <td><label class="toggle"><input type="checkbox" data-active ${s.active ? "checked" : ""}> <span class="small">${s.active ? "Yes" : "No"}</span></label></td>
+          <td class="muted small">${esc(when(s.created_at))}</td>
+          <td class="muted small">${esc(when(s.last_inbound_at))}</td>
+          <td><button class="btn small" data-rename>Rename</button></td>
+        </tr>`;
+    }
+
+    /** Excel may save as UTF-8 or Windows-1252; try UTF-8 strictly first. */
+    async function readCsv(file) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+      catch { return new TextDecoder("windows-1252").decode(bytes); }
+    }
+
+    // ---- Start -----------------------------------------------------------------
+
+    document.getElementById("sign-out").onclick = async () => {
+      await supabase.auth.signOut();
+      location.hash = "";
+      renderLogin();
+    };
+
+    // Errors from an expired or used sign-in link arrive in the URL hash.
+    const linkError = new URLSearchParams(location.hash.replace(/^#/, "")).get("error_description");
+
+    // getSession waits until supabase-js has read any sign-in token from the URL.
+    await supabase.auth.getSession();
+    if (/access_token|refresh_token|error_description/.test(location.hash)) {
+      history.replaceState(null, "", location.pathname + (linkError ? "" : "#week"));
+    }
+    window.addEventListener("hashchange", route);
+    if (linkError) renderLogin(`${linkError.replace(/\+/g, " ")}. Please request a new link.`);
+    else route();
+  </script>
+</body>
+</html>
