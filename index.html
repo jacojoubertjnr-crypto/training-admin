@@ -232,7 +232,7 @@
       <nav id="nav">
         <a href="#week" data-route="week">This week</a>
         <a href="#schedules" data-route="schedules">Schedules <span class="badge" id="badge-schedules" hidden></span></a>
-        <a href="#staff" data-route="staff">Staff <span class="badge" id="badge-staff" hidden></span></a>
+        <a href="#staff" data-route="staff">Staff</a>
         <a href="#history" data-route="history">History</a>
       </nav>
       <div class="user"><span class="email" id="user-email"></span><button class="btn small" id="sign-out">Sign out</button></div>
@@ -349,8 +349,6 @@
       const pending = state.dashboard.schedules.filter((s) => s.status === "pending_approval").length;
       const b1 = document.getElementById("badge-schedules");
       b1.hidden = pending === 0; b1.textContent = pending;
-      const b2 = document.getElementById("badge-staff");
-      b2.hidden = state.dashboard.pendingRequests === 0; b2.textContent = state.dashboard.pendingRequests;
       return state.dashboard;
     }
 
@@ -407,11 +405,14 @@
 
     function renderAttendance({ schedule, trainings }, heading) {
       const bookings = trainings.reduce((n, t) => n + t.bookings.length, 0);
+      const chip = schedule.status === "queued"
+        ? `<span class="chip pending">Waiting for the bot to post it. Is your PC on?</span>`
+        : `<span class="chip sent">Posted in the staff group</span>`;
       app.innerHTML = `
         <div class="page-head">
           <div>
             <h1>${esc(heading ? `${heading}: week of ${shortDate(schedule.week_start)}` : `Week of ${shortDate(schedule.week_start)}`)}</h1>
-            <p class="muted">${plural(trainings.length, "session")} · ${plural(bookings, "booking")} · <span class="chip sent">Sent to staff</span></p>
+            <p class="muted">${plural(trainings.length, "session")} · ${plural(bookings, "booking")} · ${chip}</p>
           </div>
           <div class="actions">
             <button class="btn" id="print">Print sign-in sheets</button>
@@ -465,7 +466,7 @@
             <input type="time" name="end" value="${esc(hhmm(t.end_time))}" aria-label="End time">
           </div>
           <input type="text" name="location" value="${esc(t.location ?? "")}" placeholder="Venue" aria-label="Venue">
-          ${t.bookings.length ? `<div class="notice warn small">${plural(t.bookings.length, "person has", "people have")} booked this. Their WhatsApp reminder and calendar link will show the new details, but anyone who already saved it in their calendar won't see the change. Let them know.</div>` : ""}
+          <div class="notice warn small">The poll in the WhatsApp group keeps its original wording. ${t.bookings.length ? `${plural(t.bookings.length, "person has", "people have")} booked this: their reminder and calendar link will show the new details, but anyone who already saved it in their calendar won't see the change.` : ""} Post a note in the group if the change matters.</div>
           <div class="actions"><button class="btn primary small" data-save>Save</button><button class="btn small" data-cancel>Cancel</button></div>
         </div>`;
       card.querySelector("[data-cancel]").onclick = () => route();
@@ -500,7 +501,6 @@
     }
 
     function renderEditor({ schedule, trainings }) {
-      const staffCount = state.dashboard.activeStaff;
       const warnings = state.uploadWarnings[schedule.id] ?? [];
       app.innerHTML = `
         <div class="page-head">
@@ -510,7 +510,7 @@
           </div>
           <div class="actions">
             <button class="btn danger" id="discard">Discard</button>
-            <button class="btn primary" id="send">Send to ${plural(staffCount, "staff member")}</button>
+            <button class="btn primary" id="send">Post in the staff group</button>
           </div>
         </div>
         ${warnings.length ? `<div class="notice warn" style="margin-bottom:16px"><strong>Check these:</strong><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
@@ -536,13 +536,13 @@
 
       document.getElementById("send").onclick = async (e) => {
         if (document.querySelector(".row-status.err")) return toast("Fix the highlighted sessions first.", "error");
-        if (!confirm(`Send this week's trainings to ${plural(staffCount, "staff member")} on WhatsApp?`)) return;
+        if (!confirm("Post this week's trainings as a poll in the staff WhatsApp group?")) return;
         e.target.disabled = true;
-        e.target.innerHTML = `<span class="spinner"></span> Sending…`;
+        e.target.innerHTML = `<span class="spinner"></span> Approving…`;
         try {
-          const r = await api("send_schedule", { id: schedule.id });
-          toast(r.failed.length ? `Sent to ${r.total - r.failed.length} of ${r.total}. Couldn't reach: ${r.failed.join(", ")}` : `Sent to ${plural(r.total, "staff member")}.`, r.failed.length ? "error" : "");
-          location.hash = "#week";
+          await api("send_schedule", { id: schedule.id });
+          toast("Approved. The bot will post it in the staff group within a minute, as long as your PC is on.");
+          location.hash = `#schedule/${schedule.id}`;
         } catch (err) {
           toast(err.message, "error");
           route();
@@ -618,7 +618,7 @@
 
     function renderSchedules() {
       const pending = state.dashboard.schedules.filter((s) => s.status === "pending_approval");
-      const recent = state.dashboard.schedules.filter((s) => s.status === "sent").slice(0, 5);
+      const recent = state.dashboard.schedules.filter((s) => s.status !== "pending_approval").slice(0, 5);
       app.innerHTML = `
         <div class="page-head"><div><h1>Schedules</h1><p class="muted">Upload the weekly PDF. You'll check what Claude read before anything goes to staff.</p></div></div>
         <div class="stack">
@@ -690,7 +690,7 @@
           <tbody>${list.map((s) => `
             <tr class="link" data-id="${s.id}" tabindex="0">
               <td><strong>${esc(shortDate(s.week_start))}</strong></td>
-              <td><span class="chip ${s.status === "sent" ? "sent" : "pending"}">${s.status === "sent" ? "Sent" : "Waiting"}</span></td>
+              <td><span class="chip ${s.status === "sent" ? "sent" : "pending"}">${{ sent: "Posted", queued: "Posting…" }[s.status] ?? "Needs your check"}</span></td>
               <td>${s.sessions}</td>
               <td>${s.bookings}</td>
               <td class="muted">${esc(when(s.processed_at))}</td>
@@ -719,12 +719,11 @@
     // ---- Staff -------------------------------------------------------------------
 
     async function renderStaff() {
-      const { staff, requests } = await api("staff");
-      const pending = requests.filter((r) => r.status === "pending");
+      const { staff } = await api("staff");
       const active = staff.filter((s) => s.active).length;
       app.innerHTML = `
         <div class="page-head">
-          <div><h1>Staff</h1><p class="muted">${active} active · ${plural(staff.length, "person", "people")} in total. Only people who agreed to get WhatsApp messages should be listed.</p></div>
+          <div><h1>Staff</h1><p class="muted">${active} active · ${plural(staff.length, "person", "people")} in total. People are added automatically when they vote in the group poll. Switch someone to inactive to stop their bookings and reminders.</p></div>
           <div class="actions">
             <label class="btn">Import CSV<input type="file" id="import" accept=".csv,text/csv" hidden></label>
             <button class="btn" id="export">Export CSV</button>
@@ -732,21 +731,6 @@
         </div>
         <div class="stack">
           <div id="import-result"></div>
-          ${pending.length ? `
-            <div class="card">
-              <h2>Join requests</h2>
-              <div class="table-wrap"><table>
-                <tbody>${pending.map((r) => `
-                  <tr>
-                    <td><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.phone)}</div></td>
-                    <td class="muted small">Asked ${esc(when(r.requested_at))}</td>
-                    <td style="text-align:right"><div class="actions" style="justify-content:flex-end">
-                      <button class="btn small" data-decline="${r.wa_id}">Decline</button>
-                      <button class="btn primary small" data-approve="${r.wa_id}">Approve</button>
-                    </div></td>
-                  </tr>`).join("")}</tbody>
-              </table></div>
-            </div>` : ""}
           <div class="card">
             <h2>Add a person</h2>
             <form class="form-row" id="add-form">
@@ -763,16 +747,6 @@
             </table></div>
           </div>
         </div>`;
-
-      document.querySelectorAll("[data-approve]").forEach((b) => b.onclick = () => decide("approve_request", b.dataset.approve, "approved"));
-      document.querySelectorAll("[data-decline]").forEach((b) => b.onclick = () => decide("decline_request", b.dataset.decline, "declined"));
-      async function decide(action, wa_id, word) {
-        try {
-          const r = await api(action, { wa_id });
-          toast(`${r.name} ${word}.`);
-          route();
-        } catch (err) { toast(err.message, "error"); }
-      }
 
       document.getElementById("add-form").onsubmit = async (e) => {
         e.preventDefault();
